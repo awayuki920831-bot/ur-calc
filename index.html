@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ヒロアカUR 安置ダメージ計算機</title>
+    <style>
+        body { font-family: sans-serif; background: #f0f4f8; padding: 20px; color: #333; }
+        .card { background: white; padding: 20px; border-radius: 10px; max-width: 500px; margin: auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h1 { font-size: 1.2rem; text-align: center; color: #1a73e8; }
+        .input-group { margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        label { display: block; font-size: 0.9rem; font-weight: bold; margin-bottom: 5px; }
+        input, select { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        button { width: 100%; padding: 12px; background: #1a73e8; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        button:hover { background: #1557b0; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.85rem; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        th { background: #f8f9fa; }
+        .highlight { color: #d93025; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>安置ダメージ計算器</h1>
+    
+    <label>最大HP</label>
+    <input type="number" id="maxHp" value="300">
+
+    <div id="cards-container">
+        <!-- HP防御力3つ分 -->
+        <div class="input-group">
+            <label>防御カード 1つ目</label>
+            <select class="lv">
+                <option value="0">なし</option>
+                <option value="3">Lv3 (2%)</option>
+                <option value="4">Lv4 (2.5%)</option>
+            </select>
+            <select class="fixer">
+                <option value="1">フィクサーなし</option>
+                <option value="2">左フィクサー (2.0倍)</option>
+                <option value="2.1">右フィクサー (2.1倍)</option>
+            </select>
+        </div>
+        <div class="input-group">
+            <label>HP防御力 2つ目</label>
+            <select class="lv"><option value="0">なし</option><option value="3">Lv3</option><option value="4">Lv4</option></select>
+            <select class="fixer"><option value="1">なし</option><option value="2">左</option><option value="2.1">右</option></select>
+        </div>
+        <div class="input-group">
+            <label>HP防御力 3つ目</label>
+            <select class="lv"><option value="0">なし</option><option value="3">Lv3</option><option value="4">Lv4</option></select>
+            <select class="fixer"><option value="1">なし</option><option value="2">左</option><option value="2.1">右</option></select>
+        </div>
+    </div>
+
+    <button onclick="calculate()">計算する</button>
+
+    <table id="resultTable" style="display:none;">
+        <thead>
+            <tr>
+                <th>安置</th>
+                <th>軽減</th>
+                <th>最低HP</th>
+                <th>ギリギリライン</th>
+            </tr>
+        </thead>
+        <tbody id="resultBody"></tbody>
+    </table>
+</div>
+
+<script>
+function calculate() {
+    const maxHp = parseInt(document.getElementById('maxHp').value);
+    const lvs = document.querySelectorAll('.lv');
+    const fixers = document.querySelectorAll('.fixer');
+    const phases = [10, 13, 15, 20, 23, 28, 40];
+    
+    let totalMultiplier = 1.0;
+    
+    for (let i = 0; i < 3; i++) {
+        let lv = parseInt(lvs[i].value);
+        let fixerMult = parseFloat(fixers[i].value);
+        let baseCut = (lv === 3) ? 0.02 : (lv === 4) ? 0.025 : 0;
+        totalMultiplier *= (1.0 - (baseCut * fixerMult));
+    }
+
+    const tbody = document.getElementById('resultBody');
+    tbody.innerHTML = '';
+    
+    phases.forEach(d => {
+        let n = Math.ceil(d * totalMultiplier);
+        let limitHp = n * 6 + 1;
+        
+        let row = `<tr><td>${d}</td><td>${n}</td><td>${limitHp}</td>`;
+        
+        if (maxHp < limitHp) {
+            row += `<td class="highlight">不可</td>`;
+        } else {
+            let currentHp = maxHp;
+            while (currentHp - n >= limitHp) {
+                currentHp -= n;
+            }
+            row += `<td>HP:<span class="highlight">${currentHp}</span>で飲む</td>`;
+        }
+        row += `</tr>`;
+        tbody.innerHTML += row;
+    });
+
+    document.getElementById('resultTable').style.display = 'table';
+}
+</script>
+
+</body>
+</html>
